@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Navisworks SCADA 線槽配置判斷指南 - 離線單檔版</title>
+<style>
+:root{
+  --bg:#F8FAFC; --card:#FFFFFF; --text:#0F172A; --muted:#64748B; --border:#E2E8F0;
+  --accent:#FFC72C; --accent-2:#3B82F6; --code-bg:#0F172A; --code-text:#E2E8F0;
+  --callout-amber:#FEF3C7; --callout-border:#F59E0B;
+}
+[data-theme="dark"]{
+  --bg:#0B1220; --card:#111C31; --text:#E2E8F0; --muted:#94A3B8; --border:#1E2A45;
+  --code-bg:#0F172A; --code-text:#E2E8F0;
+  --callout-amber:#2A2410; --callout-border:#F59E0B;
+}
+*{box-sizing:border-box}
+html{font-size:20px}
+body{
+  margin:0; font-family:-apple-system,BlinkMacSystemFont,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+  background:var(--bg); color:var(--text); line-height:1.9; letter-spacing:0.02em;
+  transition:background .3s,color .3s;
+}
+a{color:var(--accent-2); text-decoration:none}
+.mono{font-family:"JetBrains Mono","SF Mono",Menlo,monospace}
+.header{
+  position:sticky; top:0; z-index:50; backdrop-filter:blur(12px);
+  background:color-mix(in srgb,var(--bg) 85%, transparent);
+  border-bottom:1px solid var(--border); padding:14px 24px;
+  display:flex; justify-content:space-between; align-items:center;
+}
+.header h1{font-size:1.1rem; margin:0; font-weight:800; letter-spacing:-0.02em}
+.controls{display:flex; gap:10px; align-items:center}
+.btn{
+  border:1px solid var(--border); background:var(--card); color:var(--text);
+  padding:8px 14px; border-radius:999px; font-size:0.8rem; cursor:pointer;
+  transition:all .2s; font-weight:600;
+}
+.btn:hover{transform:translateY(-1px); border-color:var(--text)}
+.btn.active{background:var(--text); color:var(--bg)}
+.container{max-width:1200px; margin:0 auto; padding:28px 24px}
+.hero{
+  background:var(--card); border:1px solid var(--border); border-radius:24px;
+  padding:40px; position:relative; overflow:hidden;
+}
+.hero::before{
+  content:""; position:absolute; inset:0;
+  background:radial-gradient(600px at 20% 0%, color-mix(in srgb, var(--accent) 20%, transparent), transparent),
+             radial-gradient(500px at 80% 20%, color-mix(in srgb, var(--accent-2) 15%, transparent), transparent);
+  pointer-events:none;
+}
+.badge{display:inline-flex; gap:6px; align-items:center; padding:6px 12px; border-radius:999px; font-size:0.7rem; font-weight:700; border:1px solid var(--border); background:var(--card)}
+.badge.official{background:#DCFCE7; color:#166534; border-color:#BBF7D0}
+[data-theme="dark"] .badge.official{background:#102A18; color:#86EFAC}
+.badge.third{background:#DBEAFE; color:#1E40AF; border-color:#BFDBFE}
+[data-theme="dark"] .badge.third{background:#132040; color:#93C5FD}
+.badge.unverified{background:#F1F5F9; color:#475569}
+[data-theme="dark"] .badge.unverified{background:#1E293B; color:#94A3B8}
+.card{
+  background:var(--card); border:1px solid var(--border); border-radius:20px; padding:28px;
+  box-shadow:0 10px 30px -20px rgba(15,23,42,0.3);
+}
+.flow{display:flex; gap:12px; flex-wrap:wrap; margin:20px 0}
+.flow .step{
+  flex:1; min-width:140px; background:var(--card); border:1px solid var(--border); border-radius:16px; padding:16px;
+  text-align:center; position:relative;
+}
+.flow .step .num{
+  width:36px; height:36px; border-radius:50%; background:var(--text); color:var(--bg);
+  display:grid; place-items:center; font-weight:800; margin:0 auto 10px;
+}
+.flow .step.active{border-color:var(--accent); box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 30%, transparent)}
+h2{font-size:1.6rem; font-weight:800; letter-spacing:-0.03em; margin:40px 0 16px}
+h3{font-size:1.2rem; font-weight:800; margin:28px 0 12px}
+table{width:100%; border-collapse:collapse; font-size:0.85rem}
+th{text-align:left; padding:14px 16px; font-size:0.7rem; letter-spacing:0.08em; text-transform:uppercase; color:var(--muted); border-bottom:1px solid var(--border)}
+td{padding:16px; border-bottom:1px solid var(--border); vertical-align:top}
+kbd{
+  background:var(--code-bg); color:var(--code-text); padding:4px 8px; border-radius:6px; font-size:0.8em; font-family:monospace;
+  border:1px solid color-mix(in srgb,var(--border) 50%, transparent);
+}
+.callout{border-left:4px solid var(--callout-border); background:var(--callout-amber); padding:16px 20px; border-radius:0 12px 12px 0; margin:16px 0; font-size:0.9rem}
+.grid2{display:grid; grid-template-columns:1fr 1fr; gap:20px}
+@media(max-width:800px){.grid2{grid-template-columns:1fr} html{font-size:19px} .flow .step{min-width:100px}}
+.dot-grid{
+  background-image:radial-gradient(var(--border) 1px, transparent 1px);
+  background-size:24px 24px;
+}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>Navisworks SCADA 線槽判斷指南 <span style="opacity:.6; font-weight:400">· 離線單檔版</span></h1>
+  <div class="controls">
+    <button class="btn" id="langBtn" onclick="toggleLang()">繁 / 简</button>
+    <button class="btn" id="themeBtn" onclick="toggleTheme()">🌙 暗色</button>
+  </div>
+</div>
+
+<div class="container">
+  <div class="hero dot-grid">
+    <div style="position:relative; z-index:1">
+      <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px">
+        <span class="badge official">✅ 官方來源可追溯</span>
+        <span class="badge third">🔸 第三方交叉驗證</span>
+        <span class="badge unverified">【未查證】明確標示</span>
+      </div>
+      <h2 style="margin:0; font-size:2.4rem; line-height:1.15; letter-spacing:-0.04em">判斷 SCADA 線槽<br/>能否配置的現場操作手冊</h2>
+      <p style="margin:16px 0 0; color:var(--muted); max-width:720px; font-size:1rem">只保留上一輪查證過的內容。沒查到官方出處的項目會標【未查證】。支援繁簡切換、暗亮模式、20px 大字，離線也能打開。</p>
+      <div style="margin-top:20px; display:flex; gap:10px; flex-wrap:wrap">
+        <span class="badge">Navisworks 2025+</span>
+        <span class="badge">Simulate / Manage 差異已標註</span>
+        <span class="badge">SCADA / MEP / BIM</span>
+      </div>
+    </div>
+  </div>
+
+  <h2>整體流程</h2>
+  <div class="flow">
+    <div class="step active"><div class="num">①</div><div><span class="t-trad">開剖面，用 Box 框出目標樓層</span><span class="t-simp" style="display:none">开剖面，用 Box 框出目标楼层</span></div></div>
+    <div class="step"><div class="num">②</div><div><span class="t-trad">調整 Box 高度</span><span class="t-simp" style="display:none">调整 Box 高度</span></div></div>
+    <div class="step"><div class="num">③</div><div><span class="t-trad">俯視看平面路徑</span><span class="t-simp" style="display:none">俯视看平面路径</span></div></div>
+    <div class="step"><div class="num">④</div><div>控制顯示</div></div>
+    <div class="step"><div class="num">⑤</div><div><span class="t-trad">前視/右視看高度</span><span class="t-simp" style="display:none">前视/右视看高度</span></div></div>
+    <div class="step"><div class="num">⑥</div><div>Measure 量淨空</div></div>
+    <div class="step"><div class="num">⑦</div><div><span class="t-trad">存 Viewpoint</span><span class="t-simp" style="display:none">存视点</span></div></div>
+    <div class="step"><div class="num">⑧</div><div>Clash 檢查</div></div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <h3 style="margin-top:0">① 開啟剖面，選 Box 模式</h3>
+      <p><strong class="t-trad">做什麼：</strong><strong class="t-simp" style="display:none">做什么：</strong>把其他樓層切掉，只看目標樓層。</p>
+      <ol>
+        <li><span class="t-trad">點</span><span class="t-simp" style="display:none">点</span> <kbd><span class="t-trad">視點 > 剖切 > 啟用剖切</span><span class="t-simp" style="display:none">视点 > 剖分 > 启用剖分</span></kbd> <span class="mono" style="color:var(--muted)">(Viewpoint > Sectioning > Enable Sectioning)</span></li>
+        <li><span class="t-trad">開啟後，上方會自動出現</span><span class="t-simp" style="display:none">开启后，上方会自动出现</span> <kbd><span class="t-trad">剖切工具</span><span class="t-simp" style="display:none">剖分工具</span></kbd> <span class="mono">(Sectioning Tools)</span></li>
+        <li><span class="t-trad">在模式選</span><span class="t-simp" style="display:none">在模式选</span> <kbd>方塊 Box</kbd></li>
+      </ol>
+      <div class="callout"><strong>⚠️ 原理：</strong>Box 模式下，移動方盒時只會顯示方盒範圍內的幾何。框外的樑和風管會直接消失。</div>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">② 調整 Box 的大小與位置</h3>
+      <p><kbd><span class="t-trad">剖切工具 > 轉換 > 移動/旋轉/縮放</span><span class="t-simp" style="display:none">剖分工具 > 变换 > 移动/旋转/缩放</span></kbd></p>
+      <ul>
+        <li><span class="t-trad">可用控制器拖曳，也可直接輸入數值</span><span class="t-simp" style="display:none">可用控制器拖曳，也可直接输入数值</span></li>
+        <li><span class="t-trad">選取目標樓層物件後按</span><span class="t-simp" style="display:none">选取目标楼层物件后按</span> <kbd><span class="t-trad">適合選取 Fit Selection</span><span class="t-simp" style="display:none">适合选择 Fit Selection</span></kbd></li>
+      </ul>
+      <p><strong>高度怎麼抓：</strong></p>
+      <ul>
+        <li><span class="t-trad">上緣：蓋到上層樓板下緣，才看得到樑</span><span class="t-simp" style="display:none">上缘：盖到上层楼板下缘，才看得到梁</span></li>
+        <li>下緣：蓋到天花板</li>
+        <li><span class="t-trad">原則：寧可先厚一點，確認樑、風管、消防管都還看得到，再慢慢壓薄</span><span class="t-simp" style="display:none">原则：宁可先厚一点，确认梁、风管、消防管都还看得到，再慢慢压薄</span></li>
+      </ul>
+      <span class="badge unverified">【未查證】約 1m 厚度建議無官方出處</span>
+    </div>
+  </div>
+
+  <h2>③ 俯視看平面路徑 + ④ 控制顯示</h2>
+  <div class="grid2">
+    <div class="card">
+      <p><span class="t-trad">切到上視角，並改成正投影（物體不會近大遠小）</span><span class="t-simp" style="display:none">切到上视角，并改成正投影</span></p>
+      <p><kbd><span class="t-trad">視點 > 相機 > 正投影 Orthographic</span><span class="t-simp" style="display:none">视点 > 相机 > 正交 Orthographic</span></kbd></p>
+      <p><span class="t-trad">這一步只看牆、柱、既有線槽的平面位置，哪裡有空隙可穿過</span><span class="t-simp" style="display:none">这一步只看墙、柱、既有线槽的平面位置，哪里有空隙可穿过</span></p>
+    </div>
+    <div class="card">
+      <table>
+        <tr><th>系統</th><th><span class="t-trad">處理</span><span class="t-simp" style="display:none">处理</span></th></tr>
+        <tr><td><span class="t-trad">結構梁柱</span><span class="t-simp" style="display:none">结构梁柱</span></td><td>保留（最常擋路）</td></tr>
+        <tr><td>樓板/建築牆</td><td><span class="t-trad">保留，可設透明</span><span class="t-simp" style="display:none">保留，可设透明</span></td></tr>
+        <tr><td>HVAC 風管 / 消防管 / 給排水 / 電力線槽</td><td>保留</td></tr>
+        <tr><td>SCADA</td><td>保留，最清楚</td></tr>
+        <tr><td>家具、裝潢</td><td>可隱藏 <kbd><span class="t-trad">常用 > 可見性 > 隱藏</span><span class="t-simp" style="display:none">常用 > 可见性 > 隐藏</span></kbd></td></tr>
+      </table>
+      <p style="font-size:.85rem; color:var(--muted)"><span class="t-trad">建議建築和樓板設透明，比直接隱藏好</span><span class="t-simp" style="display:none">建议建筑和楼板设透明，比直接隐藏好</span>。 <kbd><span class="t-trad">項目工具 > 外觀 > 透明度</span><span class="t-simp" style="display:none">项目工具 > 外观 > 透明度</span></kbd></p>
+    </div>
+  </div>
+
+  <h2>⑤ 前視/右視看高度 + ⑥ Measure 量淨空</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3 style="margin-top:0"><span class="t-trad">口訣</span><span class="t-simp" style="display:none">口诀</span>：俯視看路徑 → 側視看高度 → 3D 最後確認</h3>
+      <p><span class="t-trad">確認線槽要放在樑下、風管下，還是根本沒空間</span><span class="t-simp" style="display:none">确认线槽要放在梁下、风管下，还是根本没空间</span></p>
+    </div>
+    <div class="card">
+      <p><kbd><span class="t-trad">審閱 > 測量</span><span class="t-simp" style="display:none">审阅 > 测量</span></kbd> <span class="mono">(Review > Measure)</span></p>
+      <table>
+        <tr><th>工具</th><th>用途</th><th>操作</th></tr>
+        <tr><td><span class="t-trad">點對點</span><span class="t-simp" style="display:none">点到点</span></td><td><span class="t-trad">量兩點距離，例如樑底到風管頂</span><span class="t-simp" style="display:none">量两点距离，例如梁底到风管顶</span></td><td>點起點與終點</td></tr>
+        <tr><td><span class="t-trad">最短距離</span><span class="t-simp" style="display:none">最短距离</span></td><td><span class="t-trad">量兩個物件最近距離</span><span class="t-simp" style="display:none">量两个物件最近距离</span></td><td>Ctrl 選兩個物件 → Measure Shortest Distance</td></tr>
+      </table>
+      <div class="callout">要量的項目：梁底高度、風管底高度、可用淨高、可用淨寬、預計線槽與周邊物件的距離。【推測】量出來的數字只反映模型內容。如果模型沒建保溫層、吊架或維修空間，實際可用空間會更小。</div>
+    </div>
+  </div>
+
+  <h2>⑦ 存成 Saved Viewpoint + ⑧ Clash 檢查</h2>
+  <div class="grid2">
+    <div class="card">
+      <p><kbd><span class="t-trad">視點 > 儲存、載入與播放 > 儲存視點</span><span class="t-simp" style="display:none">视点 > 保存、加载和回放 > 保存视点</span></kbd></p>
+      <p><span class="t-trad">剖面平面會儲存在 viewpoint 裡，下次不用重切</span><span class="t-simp" style="display:none">剖面平面会储存在视点里，下次不用重切</span></p>
+      <p class="mono" style="font-size:.85rem; color:var(--muted)">命名範例：2F_SCADA_平面、2F_SCADA_北側</p>
+    </div>
+    <div class="card">
+      <p><strong>Clash Detective（僅 Manage 版）</strong> <span class="mono">(Home > Tools > Clash Detective)</span></p>
+      <ul>
+        <li><strong>Hard</strong>：實體重疊</li>
+        <li><strong>Clearance</strong>：淨距不足（選 Clearance 時，也會一併抓出 Hard 碰撞）</li>
+      </ul>
+      <div class="callout">⚠️ 被隱藏的物件不會納入碰撞測試，做 Clash 前要先恢復顯示。沒有碰撞，不等於一定能施工。</div>
+    </div>
+  </div>
+
+  <h2>各功能按鈕中英對照總表（離線可搜尋）</h2>
+  <div class="card">
+    <input id="search" placeholder="搜尋：例如 剖切、Hide、透明度..." style="width:100%; padding:12px 16px; border-radius:12px; border:1px solid var(--border); background:var(--bg); color:var(--text); font-size:0.9rem; margin-bottom:16px" oninput="filterTable()">
+    <div style="overflow:auto">
+    <table id="mapTable">
+      <thead><tr><th>功能</th><th>中文路徑 (繁 / 简)</th><th>English Path</th><th>來源</th></tr></thead>
+      <tbody>
+        <tr><td>開啟剖面</td><td><span class="t-trad">視點 > 剖切 > 啟用剖切</span><span class="t-simp" style="display:none">视点 > 剖分 > 启用剖分</span></td><td>Viewpoint > Sectioning > Enable Sectioning</td><td><span class="badge official">✅</span></td></tr>
+        <tr><td>Box / Planes</td><td><span class="t-trad">剖切工具 > 模式 > 方塊 / 平面</span><span class="t-simp" style="display:none">剖分工具 > 模式 > 框 / 平面</span></td><td>Sectioning Tools > Mode > Box / Planes</td><td><span class="badge third">🔸</span></td></tr>
+        <tr><td>移動/旋轉/縮放</td><td><span class="t-trad">剖切工具 > 轉換 > 移動/旋轉/縮放</span><span class="t-simp" style="display:none">剖分工具 > 变换 > 移动/旋转/缩放</span></td><td>Sectioning Tools > Transform > Move/Rotate/Scale</td><td><span class="badge official">✅</span></td></tr>
+        <tr><td>正投影</td><td><span class="t-trad">視點 > 相機 > 正投影</span><span class="t-simp" style="display:none">视点 > 相机 > 正交</span></td><td>Viewpoint > Camera > Orthographic</td><td><span class="badge official">✅</span></td></tr>
+        <tr><td>隱藏</td><td><span class="t-trad">常用 > 可見性 > 隱藏</span><span class="t-simp" style="display:none">常用 > 可见性 > 隐藏</span></td><td>Home > Visibility > Hide</td><td><span class="badge official">✅</span></td></tr>
+        <tr><td>只留選取</td><td><span class="t-trad">常用 > 可見性 > 隱藏未選取</span><span class="t-simp" style="display:none">常用 > 可见性 > 隐藏未选定对象</span></td><td>Home > Visibility > Hide Unselected</td><td><span class="badge official">✅</span></td></tr>
+        <tr><td>透明度</td><td><span class="t-trad">項目工具 > 外觀 > 透明度</span><span class="t-simp" style="display:none">项目工具 > 外观 > 透明度</span></td><td>Item Tools > Appearance > Transparency</td><td><span class="badge official">✅</span></td></tr>
+        <tr><td>外觀分析器</td><td><span class="t-trad">常用 > 工具 > 外觀分析器</span><span class="t-simp" style="display:none">常用 > 工具 > 外观配置器</span></td><td>Home > Tools > Appearance Profiler</td><td><span class="badge official">✅</span></td></tr>
+        <tr><td>尋找項目</td><td><span class="t-trad">常用 > 選取與搜尋 > 尋找項目</span><span class="t-simp" style="display:none">常用 > 选择和搜索 > 查找项目</span></td><td>Home > Select & Search > Find Items</td><td><span class="badge third">🔸</span></td></tr>
+        <tr><td>量測</td><td><span class="t-trad">審閱 > 測量 > 點對點 / 最短距離</span><span class="t-simp" style="display:none">审阅 > 测量 > 点到点 / 最短距离</span></td><td>Review > Measure > Point to Point / Shortest Distance</td><td><span class="badge official">✅</span></td></tr>
+        <tr><td>儲存視點</td><td><span class="t-trad">視點 > 儲存、載入與播放 > 儲存視點</span><span class="t-simp" style="display:none">视点 > 保存、加载和回放 > 保存视点</span></td><td>Viewpoint > Save, Load & Playback > Save Viewpoint</td><td><span class="badge official">✅</span></td></tr>
+        <tr><td>碰撞偵測</td><td><span class="t-trad">常用 > 工具 > 碰撞偵測</span><span class="t-simp" style="display:none">常用 > 工具 > 碰撞检查</span></td><td>Home > Tools > Clash Detective</td><td><span class="badge third">🔸</span></td></tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+
+  <div style="margin:40px 0; text-align:center; color:var(--muted); font-size:0.8rem">
+    離線單檔版 · Built for BIM Engineers · 20px 大字 · 亮/暗模式 · 繁簡切換 · 無需網路<br/>
+    來源：Autodesk Help 2025 + 官方中文語言包 + 知識庫
+  </div>
+</div>
+
+<script>
+let isDark = localStorage.getItem('navis-theme') === 'dark' || (!localStorage.getItem('navis-theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+let lang = localStorage.getItem('navis-lang') || 'trad';
+function applyTheme(){
+  document.documentElement.setAttribute('data-theme', isDark?'dark':'light');
+  document.getElementById('themeBtn').textContent = isDark ? '☀️ 亮色' : '🌙 暗色';
+  localStorage.setItem('navis-theme', isDark?'dark':'light');
+}
+function toggleTheme(){ isDark=!isDark; applyTheme(); }
+function applyLang(){
+  document.querySelectorAll('.t-trad').forEach(el=>el.style.display = lang==='trad' || lang==='both' ? '' : 'none');
+  document.querySelectorAll('.t-simp').forEach(el=>el.style.display = lang==='simp' || lang==='both' ? '' : 'none');
+  document.getElementById('langBtn').textContent = lang==='trad' ? '繁 / 簡' : lang==='simp' ? '简 / 繁' : '繁+简';
+  localStorage.setItem('navis-lang', lang);
+}
+function toggleLang(){
+  lang = lang==='trad' ? 'simp' : lang==='simp' ? 'trad' : 'trad';
+  applyLang();
+}
+function filterTable(){
+  const q = document.getElementById('search').value.toLowerCase();
+  document.querySelectorAll('#mapTable tbody tr').forEach(tr=>{
+    tr.style.display = tr.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+applyTheme(); applyLang();
+</script>
+</body>
+</html>
